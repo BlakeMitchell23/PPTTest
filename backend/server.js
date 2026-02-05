@@ -10,7 +10,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 const { generatePlan, generatePlanStreaming, SLIDE_TYPES } = require('./generator/planGenerator');
-const { generateAllSlidesHtml, generateAllSlidesHtmlStreaming, modifySlideHtml } = require('./generator/slideHtmlGenerator');
+const { generateAllSlidesHtml, generateAllSlidesHtmlStreaming } = require('./generator/slideHtmlGenerator');
 const { exportSlidesToPdf, loadSlidesCss } = require('./generator/pdfExporter');
 const { exportSlidesToPptx } = require('./generator/pptxExporter');
 const { generatePptxCodeStreaming } = require('./generator/pptxCodeGenerator');
@@ -258,38 +258,6 @@ app.post('/api/generate-slides-html', async (req, res) => {
     res.status(500).json({
       error: 'Server Error',
       message: 'Erreur lors de la generation des slides.',
-    });
-  }
-});
-
-/**
- * Modify a single slide via chatbot instruction
- * POST /api/modify-slide
- */
-app.post('/api/modify-slide', async (req, res) => {
-  try {
-    const { currentHtml, instruction, context = {} } = req.body;
-
-    if (!currentHtml || !instruction) {
-      return res.status(400).json({
-        error: 'Invalid input',
-        message: 'HTML actuel et instruction requis.',
-      });
-    }
-
-    console.log(`[${new Date().toISOString()}] Modifying slide: "${instruction.substring(0, 60)}..."`);
-
-    const newHtml = await modifySlideHtml(currentHtml, instruction, context);
-
-    res.json({
-      success: true,
-      html: newHtml,
-    });
-  } catch (error) {
-    console.error('Error modifying slide:', error);
-    res.status(500).json({
-      error: 'Server Error',
-      message: 'Erreur lors de la modification de la slide.',
     });
   }
 });
@@ -659,14 +627,13 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('=====================================================================');
-  console.log('  WAVESTONE Presentation Generator v4.0 - HTML/CSS + Chatbot + PDF/PPTX');
+  console.log('  WAVESTONE Presentation Generator v4.0 - HTML/CSS + PDF/PPTX');
   console.log('=====================================================================');
   console.log(`  Server: http://localhost:${PORT}`);
   console.log('');
   console.log('  Endpoints:');
   console.log('    POST /api/generate-plan             Generate slide plan');
   console.log('    POST /api/generate-slides-html      Generate HTML slides');
-  console.log('    POST /api/modify-slide              Chatbot: modify a slide');
   console.log('    POST /api/export-pdf                Export slides to PDF');
   console.log('    POST /api/export-pptx               Export slides to PPTX');
   console.log('    POST /api/generate-pptx-stream/init PPTX Direct: init session');

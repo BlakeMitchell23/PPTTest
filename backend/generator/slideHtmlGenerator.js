@@ -565,50 +565,6 @@ RAPPEL STRUCTURE :
 }
 
 /**
- * Modify a slide's HTML based on user instruction (chatbot)
- */
-async function modifySlideHtml(currentHtml, instruction, context = {}) {
-  const client = new Anthropic();
-
-  const userMessage = `Modifie cette slide HTML selon l'instruction utilisateur.
-
-INSTRUCTION : ${instruction}
-
-HTML ACTUEL :
-${currentHtml}
-
-${context.deckTitle ? `DECK : ${context.deckTitle}` : ''}
-${context.clientContext ? `CONTEXTE : ${context.clientContext}` : ''}
-
-Retourne le HTML COMPLET modifie de la slide (incluant le header-bar et le footer).
-Ne change que ce qui est demande. Garde la structure et les classes CSS.
-IMPORTANT : Retourne UNIQUEMENT le HTML, sans markdown, sans backticks, sans explication.`;
-
-  const response = await client.messages.create({
-    model: 'claude-opus-4-5-20251101',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: userMessage }],
-    system: SLIDE_HTML_SYSTEM_PROMPT,
-  });
-
-  const textContent = response.content.find((c) => c.type === 'text');
-  if (!textContent) {
-    throw new Error('No text content in response');
-  }
-
-  let html = textContent.text.trim();
-  html = html.replace(/^```html?\s*/i, '').replace(/\s*```$/i, '');
-
-  // Extract page number from current HTML (format: © WAVESTONE N)
-  const pageMatch = currentHtml.match(/WAVESTONE\s+(\d+)/);
-  const pageNumber = pageMatch ? parseInt(pageMatch[1], 10) : 1;
-
-  html = validateSlideHtml(html, pageNumber, 0, '', '');
-
-  return html;
-}
-
-/**
  * Validate slide HTML: ensure single .slide div, no <style>/<script>, footer present, header bar present
  */
 function validateSlideHtml(html, pageNumber, totalSlides, deckTitle = '', sectionName = '') {
@@ -725,5 +681,4 @@ function escapeHtml(text) {
 module.exports = {
   generateAllSlidesHtml,
   generateAllSlidesHtmlStreaming,
-  modifySlideHtml,
 };
