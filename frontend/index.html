@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavestone Slides Generator</title>
+    <!-- Inter Font - Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="slides.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="assets/LogoWavestonePageDebut.png" alt="Wavestone" class="logo-img">
+                    <span class="logo-divider"></span>
+                    <span class="logo-subtitle">Slides Generator</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- STEP 1: Form -->
+            <section id="formSection" class="form-section">
+                <div class="form-layout">
+                    <!-- Left: Form -->
+                    <div class="form-container">
+                        <div class="form-header">
+                            <h1>Créez votre présentation</h1>
+                            <p class="form-description">Décrivez votre sujet et laissez l'IA générer des slides professionnelles conformes à la charte Wavestone.</p>
+                        </div>
+
+                        <form id="generateForm" class="generate-form">
+                            <!-- Basic Info -->
+                            <div class="form-group">
+                                <label for="prompt">Décrivez votre présentation</label>
+                                <textarea
+                                    id="prompt"
+                                    name="prompt"
+                                    rows="4"
+                                    placeholder="Ex: Rapport d'avancement du projet de migration SAP pour le comité de pilotage. Inclure les KPIs de progression, les risques identifiés et les prochaines étapes..."
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <div class="options-row">
+                                <div class="form-group">
+                                    <label for="slideCount">Nombre de slides</label>
+                                    <div class="input-with-icon">
+                                        <input type="number" id="slideCount" name="slideCount" min="3" max="50" value="12" required>
+                                        <span class="input-suffix">slides</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="language">Langue</label>
+                                    <select id="language" name="language">
+                                        <option value="fr" selected>Francais</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="deckType">Type de deck</label>
+                                    <select id="deckType" name="deckType">
+                                        <option value="formation">Formation</option>
+                                        <option value="proposition">Proposition commerciale</option>
+                                        <option value="rapport">Rapport de projet</option>
+                                        <option value="autre" selected>Autre</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <div class="mode-buttons">
+                                    <button type="button" id="btnHtml" class="btn-mode btn-mode-html">
+                                        <span class="btn-mode-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                                <polyline points="2 17 12 22 22 17"></polyline>
+                                                <polyline points="2 12 12 17 22 12"></polyline>
+                                            </svg>
+                                        </span>
+                                        <span class="btn-mode-label">
+                                            <strong>HTML Preview</strong>
+                                            <small>Preview editable + export</small>
+                                        </span>
+                                        <span class="btn-mode-loading" style="display: none;">
+                                            <span class="spinner"></span>
+                                        </span>
+                                    </button>
+                                    <button type="button" id="btnPptx" class="btn-mode btn-mode-pptx">
+                                        <span class="btn-mode-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <path d="M9 13h2"></path>
+                                                <path d="M9 17h6"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="btn-mode-label">
+                                            <strong>PPTX Direct</strong>
+                                            <small>PowerPoint natif</small>
+                                        </span>
+                                        <span class="btn-mode-loading" style="display: none;">
+                                            <span class="spinner"></span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Error -->
+                        <div id="errorSection" class="error-section" style="display: none;">
+                            <h3>Erreur</h3>
+                            <p id="errorMessage"></p>
+                            <button type="button" class="btn-secondary" onclick="hideError()">Reessayer</button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Progress Panel -->
+                    <div class="progress-panel" id="progressPanel">
+                        <div class="progress-panel-header">
+                            <h3>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                                    <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                Assistant IA
+                            </h3>
+                        </div>
+                        <div class="progress-panel-content" id="progressPanelContent">
+                            <div class="progress-idle">
+                                <div class="progress-idle-visual">
+                                    <div class="idle-circle"></div>
+                                    <div class="idle-circle delay-1"></div>
+                                    <div class="idle-circle delay-2"></div>
+                                </div>
+                                <h4>Prêt à générer</h4>
+                                <p>Décrivez votre présentation et l'IA créera des slides professionnelles en quelques secondes.</p>
+                                <div class="progress-features">
+                                    <div class="feature-item">
+                                        <span class="feature-icon">✓</span>
+                                        <span>Charte Wavestone</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <span class="feature-icon">✓</span>
+                                        <span>Génération intelligente</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <span class="feature-icon">✓</span>
+                                        <span>Export PDF & PPTX</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="progress-panel-active" id="progressPanelActive" style="display: none;">
+                            <div class="progress-header-active">
+                                <div class="progress-spinner-small"></div>
+                                <h4 id="progressTitle">Génération en cours...</h4>
+                            </div>
+                            <div class="progress-stream">
+                                <div class="progress-log" id="progressLog">
+                                    <!-- Streaming messages will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- PPTX Direct Code Display -->
+                        <div class="progress-panel-pptx" id="progressPanelPptx" style="display: none;">
+                            <div class="progress-header-active">
+                                <div class="progress-spinner-small"></div>
+                                <h4 id="pptxProgressTitle">Génération PPTX...</h4>
+                            </div>
+                            <div class="progress-log" id="pptxProgressLog">
+                                <!-- Phase messages will appear here -->
+                            </div>
+                            <div class="code-stream-container" id="codeStreamContainer" style="display: none;">
+                                <div class="code-stream-header">
+                                    <span>Code JavaScript généré</span>
+                                </div>
+                                <pre class="code-stream-display" id="codeStreamDisplay"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 2: PPTX Chat Interface -->
+            <section id="pptxChatSection" class="pptx-chat-section" style="display: none;">
+                <div class="pptx-chat-container">
+                    <!-- Header with back button -->
+                    <div class="pptx-chat-header">
+                        <button type="button" class="btn-back" onclick="backToFormFromChat()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                            Retour
+                        </button>
+                        <h2>Génération PowerPoint</h2>
+                        <div class="pptx-chat-actions" id="pptxChatActions" style="display: none;">
+                            <button type="button" class="btn-secondary" onclick="copyGeneratedCode()" id="copyCodeBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copier le code
+                            </button>
+                            <button type="button" class="btn-primary" onclick="downloadPptxFromCode()" id="downloadPptxBtnChat">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Télécharger PPTX
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat messages area -->
+                    <div class="pptx-chat-messages" id="pptxChatMessages">
+                        <!-- Messages will be added here dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 3: PowerPoint-like Slide Editor -->
+            <section id="previewSection" class="preview-section" style="display: none;">
+                <div class="editor-layout">
+                    <!-- Left Sidebar: Thumbnails -->
+                    <div class="editor-sidebar-left">
+                        <div class="thumbnails-panel">
+                            <div class="thumbnails-header">
+                                <span>Slides</span>
+                                <button type="button" class="btn-icon" onclick="addSlide()" title="Ajouter une slide">+</button>
+                            </div>
+                            <div class="thumbnails-list" id="slideThumbnails">
+                                <!-- Thumbnail items rendered here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center: Main editing area -->
+                    <div class="editor-main">
+                        <!-- Top toolbar -->
+                        <div class="editor-toolbar">
+                            <div class="toolbar-left">
+                                <button type="button" class="btn-toolbar" onclick="backToForm()" title="Retour">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                </button>
+                                <div class="toolbar-divider"></div>
+                                <button type="button" class="btn-toolbar" onclick="undo()" title="Annuler (Ctrl+Z)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6.36 2.64L3 13"/></svg>
+                                </button>
+                                <button type="button" class="btn-toolbar" onclick="redo()" title="Refaire (Ctrl+Y)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016.36 2.64L21 13"/></svg>
+                                </button>
+                            </div>
+
+                            <!-- Formatting toolbar (text) -->
+                            <div class="toolbar-center" id="formatToolbar">
+                                <div class="toolbar-group">
+                                    <select id="fontFamilySelect" class="toolbar-select" onchange="formatFontFamily(this.value)" title="Police">
+                                        <option value="">Police</option>
+                                        <option value="'Aptos', sans-serif">Aptos</option>
+                                        <option value="'Aptos', sans-serif; font-weight: 300">Aptos Light</option>
+                                        <option value="'Aptos', sans-serif; font-weight: 600">Aptos SemiBold</option>
+                                        <option value="'Aptos', sans-serif; font-weight: 700">Aptos Bold</option>
+                                        <option value="'Aptos', sans-serif; font-weight: 800">Aptos ExtraBold</option>
+                                        <option value="'Inter', sans-serif">Inter</option>
+                                        <option value="Arial, sans-serif">Arial</option>
+                                    </select>
+                                    <select id="fontSizeSelect" class="toolbar-select" onchange="formatFontSize(this.value)" title="Taille de police">
+                                        <option value="">Taille</option>
+                                        <option value="10px">10</option>
+                                        <option value="12px">12</option>
+                                        <option value="14px">14</option>
+                                        <option value="16px">16</option>
+                                        <option value="18px">18</option>
+                                        <option value="20px">20</option>
+                                        <option value="24px">24</option>
+                                        <option value="28px">28</option>
+                                        <option value="32px">32</option>
+                                        <option value="36px">36</option>
+                                        <option value="48px">48</option>
+                                    </select>
+                                </div>
+                                <div class="toolbar-divider"></div>
+                                <div class="toolbar-group">
+                                    <button type="button" class="btn-toolbar" onclick="formatBold()" title="Gras (Ctrl+B)" data-format="bold">
+                                        <strong>B</strong>
+                                    </button>
+                                    <button type="button" class="btn-toolbar" onclick="formatItalic()" title="Italique (Ctrl+I)" data-format="italic">
+                                        <em>I</em>
+                                    </button>
+                                    <button type="button" class="btn-toolbar" onclick="formatUnderline()" title="Souligné (Ctrl+U)" data-format="underline">
+                                        <u>U</u>
+                                    </button>
+                                </div>
+                                <div class="toolbar-divider"></div>
+                                <div class="toolbar-group">
+                                    <button type="button" class="btn-toolbar" onclick="formatAlign('left')" title="Aligner à gauche">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                                    </button>
+                                    <button type="button" class="btn-toolbar" onclick="formatAlign('center')" title="Centrer">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+                                    </button>
+                                    <button type="button" class="btn-toolbar" onclick="formatAlign('right')" title="Aligner à droite">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+                                    </button>
+                                </div>
+                                <div class="toolbar-divider"></div>
+                                <div class="toolbar-group">
+                                    <div class="color-picker-wrapper" id="textColorWrapper">
+                                        <button type="button" class="btn-toolbar btn-color" onclick="openColorPicker('text')" title="Couleur du texte">
+                                            <span class="color-icon">A</span>
+                                            <span class="color-bar" id="textColorBar" style="background: #000;"></span>
+                                        </button>
+                                    </div>
+                                    <div class="color-picker-wrapper" id="bgColorWrapper">
+                                        <button type="button" class="btn-toolbar btn-color" onclick="openColorPicker('bg')" title="Couleur de fond">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                                            <span class="color-bar" id="bgColorBar" style="background: transparent;"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="toolbar-right">
+                                <div class="slide-nav">
+                                    <button type="button" class="btn-toolbar" id="prevSlideBtn" onclick="prevSlide()" title="Slide précédente">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                                    </button>
+                                    <span class="slide-counter" id="slideCounter">1 / 1</span>
+                                    <button type="button" class="btn-toolbar" id="nextSlideBtn" onclick="nextSlide()" title="Slide suivante">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                                    </button>
+                                </div>
+                                <div class="toolbar-divider"></div>
+                                <div class="export-buttons">
+                                    <button type="button" class="btn-export btn-export-pdf" id="exportPdfBtn" onclick="exportPdf()">
+                                        <span class="btn-text">PDF</span>
+                                        <span class="btn-loading" style="display: none;"><span class="spinner spinner-small"></span></span>
+                                    </button>
+                                    <button type="button" class="btn-export btn-export-pptx" id="exportPptxBtn" onclick="exportPptx()">
+                                        <span class="btn-text">PPTX</span>
+                                        <span class="btn-loading" style="display: none;"><span class="spinner spinner-small"></span></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide viewport -->
+                        <div class="slide-viewport" id="slideViewport">
+                            <div class="slide-viewport-inner" id="slideViewportInner">
+                                <!-- Slide HTML injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Insert toolbar -->
+                        <div class="insert-toolbar" id="insertToolbar">
+                            <span class="insert-label">Insérer</span>
+                            <button type="button" class="insert-btn" onclick="addElement('textbox')" title="Zone de texte">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                                <span>Texte</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('rect')" title="Rectangle">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                                <span>Forme</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('circle')" title="Cercle">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                <span>Cercle</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('line')" title="Ligne">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                                <span>Ligne</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('arrow')" title="Flèche">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+                                <span>Flèche</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="openIconPicker()" title="Icône">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                <span>Icône</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('callout')" title="Encadré">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <span>Encadré</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('sticker')" title="Étiquette">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                <span>Label</span>
+                            </button>
+                            <button type="button" class="insert-btn" onclick="addElement('image')" title="Image">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                <span>Image</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar: Properties panel -->
+                    <div class="editor-sidebar-right" id="propertiesPanel">
+                        <div class="properties-header">
+                            <span id="propertiesTitle">Propriétés</span>
+                        </div>
+                        <div class="properties-content" id="propertiesContent">
+                            <div class="properties-empty">
+                                <p>Sélectionnez un élément pour modifier ses propriétés</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 3: Success (after PDF export) -->
+            <section id="successSection" class="success-section" style="display: none;">
+                <div class="success-content">
+                    <div class="success-icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                            <circle cx="32" cy="32" r="32" fill="#04F06A"/>
+                            <path d="M26 33L30 37L38 27" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h2>PDF exporte !</h2>
+                    <p id="successDetails">Votre fichier a ete telecharge.</p>
+                    <button type="button" class="btn-primary" onclick="resetAll()">
+                        Creer une nouvelle presentation
+                    </button>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <!-- Icon Picker Popup -->
+    <div id="iconPickerPopup" class="icon-picker-popup" style="display: none;">
+        <div class="icon-picker-header">
+            <span>Choisir une icône</span>
+            <button type="button" class="color-picker-close" onclick="closeIconPicker()">&times;</button>
+        </div>
+        <div class="icon-picker-content">
+            <!-- Checks & Status -->
+            <button type="button" class="icon-btn" onclick="insertIcon('check')" title="Check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('check-circle')" title="Check cercle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('x')" title="X">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('x-circle')" title="X cercle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('alert-triangle')" title="Alerte">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('info')" title="Info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </button>
+            <!-- Arrows -->
+            <button type="button" class="icon-btn" onclick="insertIcon('arrow-right')" title="Flèche droite">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('arrow-up')" title="Flèche haut">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('arrow-down')" title="Flèche bas">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('chevron-right')" title="Chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <!-- Objects -->
+            <button type="button" class="icon-btn" onclick="insertIcon('star')" title="Étoile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('heart')" title="Cœur">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('zap')" title="Éclair">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('target')" title="Cible">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('flag')" title="Drapeau">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('award')" title="Récompense">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+            </button>
+            <!-- People & Communication -->
+            <button type="button" class="icon-btn" onclick="insertIcon('user')" title="Utilisateur">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('users')" title="Équipe">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('message-circle')" title="Message">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </button>
+            <!-- Business -->
+            <button type="button" class="icon-btn" onclick="insertIcon('briefcase')" title="Mallette">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('trending-up')" title="Croissance">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('trending-down')" title="Décroissance">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('dollar-sign')" title="Dollar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('clock')" title="Horloge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('calendar')" title="Calendrier">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </button>
+            <!-- Tech -->
+            <button type="button" class="icon-btn" onclick="insertIcon('settings')" title="Paramètres">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('lock')" title="Cadenas">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('shield')" title="Bouclier">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </button>
+            <button type="button" class="icon-btn" onclick="insertIcon('globe')" title="Globe">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Color Picker Popup -->
+    <div id="colorPickerPopup" class="color-picker-popup" style="display: none;">
+        <div class="color-picker-header">
+            <span id="colorPickerTitle">Couleur</span>
+            <button type="button" class="color-picker-close" onclick="closeColorPicker()">&times;</button>
+        </div>
+        <div class="color-picker-content">
+            <button type="button" class="color-swatch transparent" onclick="selectColor('transparent')" title="Transparent">
+                <span class="transparent-pattern"></span>
+            </button>
+            <button type="button" class="color-swatch" style="background: #000000;" onclick="selectColor('#000000')"></button>
+            <button type="button" class="color-swatch" style="background: #FFFFFF; border: 1px solid #ccc;" onclick="selectColor('#FFFFFF')"></button>
+            <button type="button" class="color-swatch" style="background: #451DC7;" onclick="selectColor('#451DC7')"></button>
+            <button type="button" class="color-swatch" style="background: #250F6B;" onclick="selectColor('#250F6B')"></button>
+            <button type="button" class="color-swatch" style="background: #04F06A;" onclick="selectColor('#04F06A')"></button>
+            <button type="button" class="color-swatch" style="background: #CAFEE0;" onclick="selectColor('#CAFEE0')"></button>
+            <button type="button" class="color-swatch" style="background: #4682B4;" onclick="selectColor('#4682B4')"></button>
+            <button type="button" class="color-swatch" style="background: #8F00FF;" onclick="selectColor('#8F00FF')"></button>
+            <button type="button" class="color-swatch" style="background: #F6F6F6; border: 1px solid #ccc;" onclick="selectColor('#F6F6F6')"></button>
+            <button type="button" class="color-swatch" style="background: #dc2626;" onclick="selectColor('#dc2626')"></button>
+            <button type="button" class="color-swatch" style="background: #ea580c;" onclick="selectColor('#ea580c')"></button>
+            <button type="button" class="color-swatch" style="background: #facc15;" onclick="selectColor('#facc15')"></button>
+        </div>
+        <div class="color-picker-custom">
+            <label>Personnalisé :</label>
+            <input type="color" id="customColorInput" value="#451DC7" onchange="selectColor(this.value)">
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
