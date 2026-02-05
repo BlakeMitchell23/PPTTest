@@ -42,7 +42,13 @@
       "Bash(tee:*)",
       "Bash(python3:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: PowerPoint generator with Wavestone theme\n\n- Backend with Claude AI integration for slide generation\n- Frontend web interface for content input and preview\n- Wavestone corporate theme support\n- PDF and PPTX export capabilities\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
