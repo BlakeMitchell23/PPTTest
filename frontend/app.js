@@ -1,6 +1,6 @@
 /**
- * Wavestone PPTX Generator
- * Premium chatbot interface with collapsible blocks
+ * Wavestone Presentation Studio
+ * Premium chatbot interface with progress stepper & suggestion chips
  */
 
 // ==========================================
@@ -22,6 +22,7 @@ const messagesEl = document.getElementById('messages');
 const downloadToast = document.getElementById('downloadToast');
 const promptInput = document.getElementById('promptInput');
 const btnSend = document.getElementById('btnSend');
+const progressStepper = document.getElementById('progressStepper');
 
 // ==========================================
 // INIT
@@ -32,6 +33,7 @@ function init() {
     promptInput.addEventListener('input', handleInputChange);
     promptInput.addEventListener('keydown', handleKeyDown);
     initScrollDetection();
+    initSuggestionChips();
 }
 
 function handleInputChange() {
@@ -47,6 +49,19 @@ function handleKeyDown(e) {
             chatForm.dispatchEvent(new Event('submit'));
         }
     }
+}
+
+function initSuggestionChips() {
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const prompt = chip.getAttribute('data-prompt');
+            if (prompt && !isGenerating) {
+                promptInput.value = prompt;
+                handleInputChange();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    });
 }
 
 // ==========================================
@@ -74,6 +89,73 @@ function handleSubmit(e) {
 }
 
 // ==========================================
+// PROGRESS STEPPER
+// ==========================================
+
+function showStepper() {
+    progressStepper.classList.add('visible');
+    resetStepper();
+}
+
+function hideStepper() {
+    progressStepper.classList.remove('visible');
+}
+
+function resetStepper() {
+    document.querySelectorAll('.stepper-step').forEach(s => {
+        s.classList.remove('active', 'completed');
+    });
+    document.querySelectorAll('.stepper-line').forEach(l => {
+        l.classList.remove('active', 'completed');
+    });
+}
+
+function setStepActive(stepName) {
+    const steps = ['plan', 'code', 'ready'];
+    const lines = document.querySelectorAll('.stepper-line');
+    const idx = steps.indexOf(stepName);
+
+    steps.forEach((s, i) => {
+        const el = document.querySelector(`.stepper-step[data-step="${s}"]`);
+        if (!el) return;
+        el.classList.remove('active', 'completed');
+        if (i < idx) {
+            el.classList.add('completed');
+        } else if (i === idx) {
+            el.classList.add('active');
+        }
+    });
+
+    lines.forEach((l, i) => {
+        l.classList.remove('active', 'completed');
+        if (i < idx) {
+            l.classList.add('completed');
+        } else if (i === idx) {
+            l.classList.add('active');
+        }
+    });
+}
+
+function setStepCompleted(stepName) {
+    const el = document.querySelector(`.stepper-step[data-step="${stepName}"]`);
+    if (el) {
+        el.classList.remove('active');
+        el.classList.add('completed');
+    }
+}
+
+function completeAllSteps() {
+    document.querySelectorAll('.stepper-step').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('completed');
+    });
+    document.querySelectorAll('.stepper-line').forEach(l => {
+        l.classList.remove('active');
+        l.classList.add('completed');
+    });
+}
+
+// ==========================================
 // GENERATION
 // ==========================================
 
@@ -88,6 +170,8 @@ async function startGeneration(data) {
     resetScrollBehavior();
 
     addUserMessage(data.prompt, data);
+    showStepper();
+    setStepActive('plan');
 
     const assistantEl = addAssistantMessage();
     const thinkingBlock = createThinkingBlock();
@@ -135,7 +219,9 @@ async function startGeneration(data) {
 
                     case 'plan_complete':
                         thinkingBlock.finish(thinkingText, msg.plan.slides.length);
-                        addStatus(assistantEl, `Plan créé · ${msg.plan.slides.length} slides`, 'success');
+                        addStatus(assistantEl, `Plan cree \u00b7 ${msg.plan.slides.length} slides`, 'success');
+                        setStepCompleted('plan');
+                        setStepActive('code');
                         break;
 
                     case 'code_chunk':
@@ -155,32 +241,41 @@ async function startGeneration(data) {
                         pptxCodeSessionId = msg.codeSessionId;
                         lineCount = pptxGeneratedCode.split('\n').length;
                         codeBlock.finish(pptxGeneratedCode, lineCount);
-                        addStatus(assistantEl, 'Code généré', 'success');
+                        addStatus(assistantEl, 'Code genere', 'success');
+                        setStepCompleted('code');
+                        setStepActive('ready');
                         break;
 
                     case 'preview_ready':
                         eventSource.close();
                         pptxCodeSessionId = msg.codeSessionId;
+                        completeAllSteps();
                         showDownloadToast();
+                        setTimeout(hideStepper, 2000);
                         finish();
                         break;
 
                     case 'pptx_ready':
                         eventSource.close();
+                        completeAllSteps();
                         showDownloadToast();
+                        setTimeout(hideStepper, 2000);
                         downloadFromBase64(msg.base64, msg.filename || 'presentation.pptx');
                         finish();
                         break;
 
                     case 'complete':
                         eventSource.close();
+                        completeAllSteps();
                         showDownloadToast();
+                        setTimeout(hideStepper, 2000);
                         finish();
                         break;
 
                     case 'error':
                         eventSource.close();
                         addStatus(assistantEl, msg.message, 'error');
+                        hideStepper();
                         finish();
                         break;
                 }
@@ -192,11 +287,13 @@ async function startGeneration(data) {
         eventSource.onerror = () => {
             eventSource.close();
             addStatus(assistantEl, 'Connexion perdue', 'error');
+            hideStepper();
             finish();
         };
 
     } catch (error) {
         addStatus(assistantEl, error.message, 'error');
+        hideStepper();
         finish();
     }
 }
@@ -214,17 +311,17 @@ function addUserMessage(text, data) {
     const div = document.createElement('div');
     div.className = 'msg msg-user';
 
-    const meta = `${data.slideCount} slides · ${data.language === 'fr' ? 'FR' : 'EN'} · ${getTypeLabel(data.deckType)}`;
+    const meta = `${data.slideCount} slides \u00b7 ${data.language === 'fr' ? 'FR' : 'EN'} \u00b7 ${getTypeLabel(data.deckType)}`;
 
     div.innerHTML = `
         <div class="msg-user-content">
             <div>${escapeHtml(text)}</div>
-            <div style="margin-top: 8px; font-size: 12px; opacity: 0.7;">${meta}</div>
+            <div class="msg-user-meta">${meta}</div>
         </div>
     `;
 
     messagesEl.appendChild(div);
-    scrollToBottom(true); // Force scroll for user message
+    scrollToBottom(true);
 }
 
 function addAssistantMessage() {
@@ -256,7 +353,7 @@ function createThinkingBlock() {
                 <div class="collapsible-meta">
                     <div class="collapsible-title">
                         <span class="indicator-dot"></span>
-                        Réflexion en cours
+                        Reflexion en cours
                     </div>
                     <div class="collapsible-subtitle">Analyse de votre demande...</div>
                 </div>
@@ -284,14 +381,13 @@ function createThinkingBlock() {
         element: div,
         update(text, streaming) {
             textEl.innerHTML = escapeHtml(text) + (streaming ? '<span class="cursor"></span>' : '');
-            // Update subtitle with word count
             const words = text.trim().split(/\s+/).length;
             subtitleEl.textContent = `${words} mots...`;
         },
         finish(text, slideCount) {
             textEl.innerHTML = escapeHtml(text);
-            titleEl.innerHTML = `<span class="indicator-dot done"></span> Réflexion terminée`;
-            subtitleEl.textContent = `Plan de ${slideCount} slides élaboré`;
+            titleEl.innerHTML = `<span class="indicator-dot done"></span> Reflexion terminee`;
+            subtitleEl.textContent = `Plan de ${slideCount} slides elabore`;
             dotEl?.classList.add('done');
         }
     };
@@ -312,9 +408,9 @@ function createCodeBlock() {
                 <div class="collapsible-meta">
                     <div class="collapsible-title">
                         <span class="indicator-dot"></span>
-                        Génération du code
+                        Generation du code
                     </div>
-                    <div class="collapsible-subtitle">JavaScript · pptxgenjs</div>
+                    <div class="collapsible-subtitle">JavaScript \u00b7 pptxgenjs</div>
                 </div>
             </div>
             <div class="collapsible-toggle">
@@ -352,13 +448,13 @@ function createCodeBlock() {
         element: div,
         update(code, lines, streaming) {
             preEl.innerHTML = escapeHtml(code) + (streaming ? '<span class="code-cursor"></span>' : '');
-            subtitleEl.textContent = `${lines} lignes · JavaScript`;
+            subtitleEl.textContent = `${lines} lignes \u00b7 JavaScript`;
             scrollEl.scrollTop = scrollEl.scrollHeight;
         },
         finish(code, lines) {
             preEl.innerHTML = escapeHtml(code);
-            titleEl.innerHTML = `<span class="indicator-dot done"></span> Code généré`;
-            subtitleEl.textContent = `${lines} lignes · JavaScript · pptxgenjs`;
+            titleEl.innerHTML = `<span class="indicator-dot done"></span> Code genere`;
+            subtitleEl.textContent = `${lines} lignes \u00b7 JavaScript \u00b7 pptxgenjs`;
             dotEl?.classList.add('done');
         }
     };
@@ -407,13 +503,13 @@ function hideDownloadToast() {
 
 async function downloadPptxFromCode() {
     if (!pptxCodeSessionId) {
-        alert('Session expirée. Veuillez relancer la génération.');
+        alert('Session expiree. Veuillez relancer la generation.');
         return;
     }
 
     const btn = document.getElementById('downloadBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = 'Génération...';
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Generation...';
     btn.disabled = true;
 
     try {
@@ -425,7 +521,7 @@ async function downloadPptxFromCode() {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.message || 'Erreur de génération');
+            throw new Error(err.message || 'Erreur de generation');
         }
 
         const blob = await response.blob();
@@ -442,7 +538,7 @@ async function downloadPptxFromCode() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            Téléchargé
+            Telecharge
         `;
 
         setTimeout(() => {
@@ -499,7 +595,7 @@ function copyCode(e) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                Copié
+                Copie
             `;
             setTimeout(() => {
                 btn.innerHTML = original;
@@ -514,7 +610,6 @@ function copyCode(e) {
 
 let userHasScrolledUp = false;
 
-// Detect if user scrolls up manually
 function initScrollDetection() {
     conversation.addEventListener('scroll', () => {
         const threshold = 100;
@@ -524,7 +619,6 @@ function initScrollDetection() {
 }
 
 function scrollToBottom(force = false) {
-    // Only auto-scroll if user hasn't scrolled up, or if forced
     if (!userHasScrolledUp || force) {
         conversation.scrollTop = conversation.scrollHeight;
     }
@@ -545,7 +639,7 @@ function getTypeLabel(type) {
         formation: 'Formation',
         proposition: 'Proposition',
         rapport: 'Rapport',
-        autre: 'Général'
+        autre: 'General'
     }[type] || type;
 }
 
